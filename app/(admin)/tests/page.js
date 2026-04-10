@@ -118,13 +118,14 @@ export default function TestsPage() {
           ) : (
             <div className="card overflow-hidden">
               <div style={{ overflowX: 'auto' }}>
-                <table className="w-full" style={{ minWidth: 500 }}>
+                <table className="w-full" style={{ minWidth: 600 }}>
                   <thead>
                     <tr className="text-xs text-slate-400 uppercase" style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <th style={{ padding: '6px 12px', textAlign: 'left', width: 130 }}>Test</th>
+                      <th style={{ padding: '6px 12px', textAlign: 'left', width: 100 }}>Test</th>
                       <th style={{ padding: '6px 12px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 90 }}>Assigned</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 90 }}>Marked</th>
+                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 110 }}>PDF</th>
+                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Assigned</th>
+                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Marked</th>
                     </tr>
                   </thead>
                   <tbody>

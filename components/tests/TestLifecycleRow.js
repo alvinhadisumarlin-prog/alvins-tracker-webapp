@@ -4,6 +4,7 @@ import { useData } from '@/hooks/useData';
 import MarkCircle from '@/components/ui/MarkCircle';
 import StudentSearchWidget from '@/components/assign/StudentSearchWidget';
 import NotifyModal from '@/components/notify/NotifyModal';
+import PdfUploadButton from '@/components/ui/PdfUploadButton';
 import { testRef, formatDate, parseClassCode } from '@/lib/helpers';
 import { getEffectiveAssignments } from '@/lib/assignments';
 import { getTestResults, getStudentById } from '@/lib/queries';
@@ -39,12 +40,6 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate,
     setNotifyModal({ recipients, message: msg });
   }
 
-  function handleStudentClick(studentId, resultId) {
-    if (onOpenPanel) {
-      onOpenPanel(studentId, resultId);
-    }
-  }
-
   return (
     <>
       {/* Main row */}
@@ -69,6 +64,9 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate,
           </div>
         </td>
         <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+          <PdfUploadButton test={test} compact />
+        </td>
+        <td style={{ padding: '8px 12px', textAlign: 'center' }}>
           <span className="text-[13px] font-semibold" style={{ color: assignedEntries.length > 0 ? '#1e293b' : '#cbd5e1' }}>
             {assignedEntries.length || '—'}
           </span>
@@ -87,7 +85,7 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate,
       {/* Expanded detail row */}
       {isExpanded && (
         <tr style={{ background: '#fafbfc' }} onClick={e => e.stopPropagation()}>
-          <td colSpan={4} style={{ padding: '10px 16px' }}>
+          <td colSpan={5} style={{ padding: '10px 16px' }}>
             {classGroups.length > 0 ? classGroups.map(([cls, classStudents]) => {
               const clsMarked = classStudents.filter(s => s.marked).length;
               return (
@@ -125,20 +123,16 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate,
                       return (
                         <div
                           key={s.studentId}
-                          className="flex items-center justify-between rounded-md"
+                          className="flex items-center justify-between rounded-md cursor-pointer hover:shadow-sm transition"
                           style={{
                             padding: '5px 10px',
                             background: s.marked ? '#f0fdf4' : 'white',
                             border: `1px solid ${s.marked ? '#bbf7d0' : '#f1f5f9'}`
                           }}
+                          onClick={() => onOpenPanel?.(s.studentId, result?.id)}
                         >
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span 
-                              className="text-xs font-medium text-slate-900 hover:text-[#4a8b7f] cursor-pointer hover:underline"
-                              onClick={() => handleStudentClick(s.studentId, result?.id)}
-                            >
-                              {student.name}
-                            </span>
+                            <span className="text-xs font-medium text-slate-900">{student.name}</span>
                             {scoreBadge}
                           </div>
                           <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 'use client';
 import { useData } from '@/hooks/useData';
 import SubjectPill from '@/components/ui/SubjectPill';
+import PdfUploadButton from '@/components/ui/PdfUploadButton';
 import { testRef, pct, pctColor, pctIcon, getStudentIBYear, parseClassCode } from '@/lib/helpers';
 import { getTestResults, getStudentById } from '@/lib/queries';
 
@@ -56,9 +57,12 @@ export default function TestCard({ test, onOpenPanel }) {
         </div>
       )}
 
+      {/* PDF Upload/View */}
+      <PdfUploadButton test={test} />
+
       {/* Results */}
       {testResults.length > 0 ? (
-        <div className="border-t border-slate-100 pt-3 mt-2">
+        <div className="border-t border-slate-100 pt-3 mt-3">
           <details>
             <summary className="flex justify-between items-center cursor-pointer">
               <span className="text-xs text-slate-400">{testResults.length} submitted</span>
@@ -79,7 +83,7 @@ export default function TestCard({ test, onOpenPanel }) {
           </details>
         </div>
       ) : (
-        <div className="border-t border-slate-100 pt-3 mt-2 text-sm text-slate-400">No results yet</div>
+        <div className="border-t border-slate-100 pt-3 mt-3 text-sm text-slate-400">No results yet</div>
       )}
 
       {/* Missing students */}
