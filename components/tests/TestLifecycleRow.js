@@ -8,7 +8,7 @@ import { testRef, formatDate, parseClassCode } from '@/lib/helpers';
 import { getEffectiveAssignments } from '@/lib/assignments';
 import { getTestResults, getStudentById } from '@/lib/queries';
 
-export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate }) {
+export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate, onOpenPanel }) {
   const { students, results, testAssignments } = useData();
   const [notifyModal, setNotifyModal] = useState(null);
 
@@ -37,6 +37,12 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate 
       .filter(Boolean);
     const msg = `📝 Reminder: ${test.display_name} (${testRef(test)}) has been assigned to your class ${classCode}. Please submit your answers.`;
     setNotifyModal({ recipients, message: msg });
+  }
+
+  function handleStudentClick(studentId, resultId) {
+    if (onOpenPanel) {
+      onOpenPanel(studentId, resultId);
+    }
   }
 
   return (
@@ -127,7 +133,12 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate 
                           }}
                         >
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-medium text-slate-900">{student.name}</span>
+                            <span 
+                              className="text-xs font-medium text-slate-900 hover:text-[#4a8b7f] cursor-pointer hover:underline"
+                              onClick={() => handleStudentClick(s.studentId, result?.id)}
+                            >
+                              {student.name}
+                            </span>
                             {scoreBadge}
                           </div>
                           <div className="flex items-center gap-2">

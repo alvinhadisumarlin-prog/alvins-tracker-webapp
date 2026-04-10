@@ -63,6 +63,10 @@ export default function TestsPage() {
     refresh();
   }, [refresh]);
 
+  const handleOpenPanel = useCallback((studentId, resultId) => {
+    setPanelStudent({ studentId, resultId });
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* View toggle + Subject filter */}
@@ -131,6 +135,7 @@ export default function TestsPage() {
                         isExpanded={expandedTest === t.id}
                         onToggle={() => setExpandedTest(prev => prev === t.id ? null : t.id)}
                         onMutate={handleMutate}
+                        onOpenPanel={handleOpenPanel}
                       />
                     ))}
                   </tbody>
@@ -146,7 +151,7 @@ export default function TestsPage() {
             <div>
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">📌 Active Tests</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={(sid, rid) => setPanelStudent({ studentId: sid, resultId: rid })} />)}
+                {currentTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={handleOpenPanel} />)}
               </div>
             </div>
           )}
@@ -154,7 +159,7 @@ export default function TestsPage() {
             <div>
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">📁 Archived Tests</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {archivedTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={(sid, rid) => setPanelStudent({ studentId: sid, resultId: rid })} />)}
+                {archivedTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={handleOpenPanel} />)}
               </div>
             </div>
           )}
