@@ -186,3 +186,21 @@ body {
   color: #1e293b;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* ============================================
+   Question Card Styles (StudentView)
+   ============================================ */
+
+.q-card {
+  border: 1px solid;
+}
+
+.q-correct {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.q-wrong {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
