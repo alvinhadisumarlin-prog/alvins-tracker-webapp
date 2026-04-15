@@ -42,6 +42,7 @@ function AppShell({ children }) {
     { key: '/analysis', label: '🔬 Analysis' },
     { key: '/trends', label: '📈 Trends' },
     { key: '/review', label: '🔍 Review' },
+    { key: '/synthetic', label: '🧪 Synthetic' },
   ];
 
   function formatTime(d) {
