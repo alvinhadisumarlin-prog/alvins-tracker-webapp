@@ -31,7 +31,12 @@ export default function StudentsPage() {
   const [bulkClassCode, setBulkClassCode] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  const subjects = useMemo(() => [...new Set(tests.map(t => t.subject))], [tests]);
+  const subjects = useMemo(() => {
+    const allSubjects = students.flatMap(s => 
+      (s.class_codes || []).map(c => parseClassCode(c).subject)
+    );
+    return [...new Set(allSubjects)].filter(Boolean).sort();
+  }, [students]);
   const classCodes = useMemo(() => getAllClassCodes(students), [students]);
   const ibYears = useMemo(() =>
     [...new Set(students.map(s => getStudentIBYear(s)).filter(Boolean))].sort(),
@@ -420,6 +425,7 @@ export default function StudentsPage() {
                                 const colors = {
                                   BIO: { bg: '#dcfce7', color: '#166534' },
                                   CHM: { bg: '#dbeafe', color: '#1e40af' },
+                                  MAA: { bg: '#f3e8ff', color: '#6b21a8' },
                                   MATH: { bg: '#f3e8ff', color: '#6b21a8' },
                                 };
                                 const style = colors[parsed.subject] || { bg: '#f1f5f9', color: '#64748b' };
