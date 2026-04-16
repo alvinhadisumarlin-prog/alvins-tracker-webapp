@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { updateStudent, excludeStudent } from '@/lib/mutations';
 import { getAllClassCodes } from '@/lib/queries';
+import { parseClassCode } from '@/lib/helpers';
 
 export default function EditStudentModal({ student, allStudents, onClose, onSave, onExclude }) {
   const [name, setName] = useState(student.name || '');
@@ -11,9 +12,20 @@ export default function EditStudentModal({ student, allStudents, onClose, onSave
   const [saving, setSaving] = useState(false);
   const [showDangerZone, setShowDangerZone] = useState(false);
   const [confirmExclude, setConfirmExclude] = useState(false);
+  const [copyFromSearch, setCopyFromSearch] = useState('');
+  const [showCopyFrom, setShowCopyFrom] = useState(false);
 
   // All existing class codes across all students (for suggestions)
   const existingCodes = useMemo(() => getAllClassCodes(allStudents), [allStudents]);
+
+  // Students to copy from (filtered by search, excluding current student)
+  const copyFromStudents = useMemo(() => {
+    if (!copyFromSearch.trim()) return [];
+    const search = copyFromSearch.toLowerCase();
+    return allStudents
+      .filter(s => s.id !== student.id && s.name.toLowerCase().includes(search))
+      .slice(0, 5);
+  }, [allStudents, copyFromSearch, student.id]);
 
   // Grad year options (current year to +4 years)
   const currentYear = new Date().getFullYear();
@@ -198,6 +210,75 @@ export default function EditStudentModal({ student, allStudents, onClose, onSave
                   </div>
                 </div>
               )}
+
+              {/* Copy from another student */}
+              <div className="mt-3 pt-3 border-t border-slate-100">
+                <button
+                  onClick={() => setShowCopyFrom(!showCopyFrom)}
+                  className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                >
+                  <span>{showCopyFrom ? '▼' : '▶'}</span>
+                  <span>Copy class from another student</span>
+                </button>
+
+                {showCopyFrom && (
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      value={copyFromSearch}
+                      onChange={e => setCopyFromSearch(e.target.value)}
+                      placeholder="Search student name..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                      autoFocus
+                    />
+                    
+                    {copyFromStudents.length > 0 && (
+                      <div className="space-y-1.5">
+                        {copyFromStudents.map(s => {
+                          const codes = s.class_codes || [];
+                          const availableCodes = codes.filter(c => !classCodes.includes(c));
+                          if (availableCodes.length === 0) return null;
+                          
+                          return (
+                            <div key={s.id} className="p-2 bg-slate-50 rounded-lg">
+                              <div className="text-sm font-medium text-slate-700 mb-1.5">{s.name}</div>
+                              <div className="flex flex-wrap gap-1">
+                                {availableCodes.map(code => {
+                                  const parsed = parseClassCode(code);
+                                  const subjectColors = {
+                                    BIO: { bg: '#dcfce7', border: '#86efac', color: '#166534' },
+                                    CHM: { bg: '#dbeafe', border: '#93c5fd', color: '#1e40af' },
+                                    MAA: { bg: '#f3e8ff', border: '#d8b4fe', color: '#6b21a8' },
+                                  };
+                                  const style = subjectColors[parsed.subject] || { bg: '#f1f5f9', border: '#cbd5e1', color: '#64748b' };
+                                  
+                                  return (
+                                    <button
+                                      key={code}
+                                      onClick={() => {
+                                        handleAddCode(code);
+                                        setCopyFromSearch('');
+                                      }}
+                                      className="px-2 py-1 text-xs rounded border font-medium hover:opacity-80 transition"
+                                      style={{ background: style.bg, borderColor: style.border, color: style.color }}
+                                    >
+                                      + {code}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {copyFromSearch.trim() && copyFromStudents.length === 0 && (
+                      <p className="text-xs text-slate-400 italic">No students found</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Danger Zone */}
