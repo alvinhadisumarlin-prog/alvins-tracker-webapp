@@ -8,10 +8,12 @@ import PdfUploadButton from '@/components/ui/PdfUploadButton';
 import { testRef, formatDate, parseClassCode } from '@/lib/helpers';
 import { getEffectiveAssignments } from '@/lib/assignments';
 import { getTestResults, getStudentById } from '@/lib/queries';
+import { archiveTest, restoreTest } from '@/lib/mutations';
 
 export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate, onOpenPanel }) {
   const { students, results, testAssignments } = useData();
   const [notifyModal, setNotifyModal] = useState(null);
+  const [archiving, setArchiving] = useState(false);
 
   const assignments = getEffectiveAssignments(test, students, results, testAssignments);
   const assignedEntries = Object.entries(assignments);
@@ -155,6 +157,43 @@ export default function TestLifecycleRow({ test, isExpanded, onToggle, onMutate,
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 10, marginTop: 6 }}>
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">+ Add Student</span>
               <StudentSearchWidget test={test} onMutate={onMutate} />
+            </div>
+
+            {/* Test Actions */}
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 10, marginTop: 10 }}>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Test Actions</span>
+              <div className="mt-2 flex gap-2">
+                {test.is_current ? (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Archive "${test.display_name}"?\n\nArchived tests are hidden from the main list but can be restored later.`)) return;
+                      setArchiving(true);
+                      await archiveTest(test.id);
+                      setArchiving(false);
+                      onMutate?.();
+                    }}
+                    disabled={archiving}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md transition"
+                    style={{ background: '#f1f5f9', color: '#64748b' }}
+                  >
+                    {archiving ? '...' : '📁 Archive Test'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      setArchiving(true);
+                      await restoreTest(test.id);
+                      setArchiving(false);
+                      onMutate?.();
+                    }}
+                    disabled={archiving}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md transition"
+                    style={{ background: '#dcfce7', color: '#166534' }}
+                  >
+                    {archiving ? '...' : '↩️ Restore Test'}
+                  </button>
+                )}
+              </div>
             </div>
           </td>
         </tr>
