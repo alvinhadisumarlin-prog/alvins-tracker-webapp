@@ -15,6 +15,7 @@ export default function TestsPage() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [expandedTest, setExpandedTest] = useState(null);
   const [panelStudent, setPanelStudent] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const availSubjects = useMemo(() =>
     [...new Set(tests.map(t => t.subject))].sort(),
@@ -26,21 +27,31 @@ export default function TestsPage() {
     return availSubjects[0] || 'BIO';
   }, [selectedSubject, availSubjects]);
 
-  // Sorted tests for lifecycle view: active first, then by test_number desc
-  const sorted = useMemo(() =>
-    [...tests]
-      .filter(t => t.subject === activeSubject)
-      .sort((a, b) => {
-        if (a.is_current !== b.is_current) return a.is_current ? -1 : 1;
-        return b.test_number - a.test_number;
-      }),
+  // Filter by subject
+  const subjectTests = useMemo(() =>
+    tests.filter(t => t.subject === activeSubject),
     [tests, activeSubject]
   );
 
-  // Stats for lifecycle stat cards
+  // Split into active and archived, both sorted by test_number desc
+  const activeTests = useMemo(() =>
+    subjectTests
+      .filter(t => t.is_current)
+      .sort((a, b) => b.test_number - a.test_number),
+    [subjectTests]
+  );
+
+  const archivedTests = useMemo(() =>
+    subjectTests
+      .filter(t => !t.is_current)
+      .sort((a, b) => b.test_number - a.test_number),
+    [subjectTests]
+  );
+
+  // Stats for lifecycle stat cards (active tests only)
   const { totalAssigned, totalMarked } = useMemo(() => {
     let assigned = 0, marked = 0;
-    sorted.forEach(t => {
+    activeTests.forEach(t => {
       const eff = getEffectiveAssignments(t, students, results, testAssignments);
       Object.values(eff).forEach(a => {
         assigned++;
@@ -48,11 +59,7 @@ export default function TestsPage() {
       });
     });
     return { totalAssigned: assigned, totalMarked: marked };
-  }, [sorted, students, results, testAssignments]);
-
-  // Cards view: split active/archived
-  const currentTests = useMemo(() => sorted.filter(t => t.is_current), [sorted]);
-  const archivedTests = useMemo(() => sorted.filter(t => !t.is_current), [sorted]);
+  }, [activeTests, students, results, testAssignments]);
 
   function handleSubjectChange(subj) {
     setSelectedSubject(subj);
@@ -105,54 +112,106 @@ export default function TestsPage() {
         <>
           {/* Lifecycle stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Tests" value={sorted.length} icon="📝" />
-            <StatCard label="Active" value={currentTests.length} icon="📌" />
+            <StatCard label="Active Tests" value={activeTests.length} icon="📝" />
+            <StatCard label="Archived" value={archivedTests.length} icon="📁" />
             <StatCard label="Assigned" value={totalAssigned} icon="👤" />
             <StatCard label="Marked" value={totalMarked} icon="✅" colorClass={totalMarked > 0 ? 'stat-green' : ''} />
           </div>
 
-          {sorted.length === 0 ? (
+          {/* Active Tests Table */}
+          {activeTests.length === 0 && archivedTests.length === 0 ? (
             <div className="card p-8 text-center text-slate-400">
               No {subjectLabel(activeSubject)} tests yet.
             </div>
           ) : (
-            <div className="card overflow-hidden">
-              <div style={{ overflowX: 'auto' }}>
-                <table className="w-full" style={{ minWidth: 600 }}>
-                  <thead>
-                    <tr className="text-xs text-slate-400 uppercase" style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <th style={{ padding: '6px 12px', textAlign: 'left', width: 100 }}>Test</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 110 }}>PDF</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Assigned</th>
-                      <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Marked</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.map(t => (
-                      <TestLifecycleRow
-                        key={t.id}
-                        test={t}
-                        isExpanded={expandedTest === t.id}
-                        onToggle={() => setExpandedTest(prev => prev === t.id ? null : t.id)}
-                        onMutate={handleMutate}
-                        onOpenPanel={handleOpenPanel}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <>
+              {activeTests.length > 0 && (
+                <div className="card overflow-hidden">
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="w-full" style={{ minWidth: 600 }}>
+                      <thead>
+                        <tr className="text-xs text-slate-400 uppercase" style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <th style={{ padding: '6px 12px', textAlign: 'left', width: 100 }}>Test</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'left' }}>Name</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'center', width: 110 }}>PDF</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Assigned</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Marked</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeTests.map(t => (
+                          <TestLifecycleRow
+                            key={t.id}
+                            test={t}
+                            isExpanded={expandedTest === t.id}
+                            onToggle={() => setExpandedTest(prev => prev === t.id ? null : t.id)}
+                            onMutate={handleMutate}
+                            onOpenPanel={handleOpenPanel}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Archived Tests Collapsible */}
+              {archivedTests.length > 0 && (
+                <div className="card overflow-hidden">
+                  <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 transition"
+                    style={{ background: '#fafbfc', borderBottom: showArchived ? '1px solid #e2e8f0' : 'none' }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">{showArchived ? '▼' : '▶'}</span>
+                      <span className="text-sm font-medium text-slate-600">📁 Archived Tests</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#f1f5f9', color: '#64748b' }}>
+                        {archivedTests.length}
+                      </span>
+                    </div>
+                  </button>
+                  
+                  {showArchived && (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="w-full" style={{ minWidth: 600 }}>
+                        <thead>
+                          <tr className="text-xs text-slate-400 uppercase" style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ padding: '6px 12px', textAlign: 'left', width: 100 }}>Test</th>
+                            <th style={{ padding: '6px 12px', textAlign: 'left' }}>Name</th>
+                            <th style={{ padding: '6px 12px', textAlign: 'center', width: 110 }}>PDF</th>
+                            <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Assigned</th>
+                            <th style={{ padding: '6px 12px', textAlign: 'center', width: 80 }}>Marked</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {archivedTests.map(t => (
+                            <TestLifecycleRow
+                              key={t.id}
+                              test={t}
+                              isExpanded={expandedTest === t.id}
+                              onToggle={() => setExpandedTest(prev => prev === t.id ? null : t.id)}
+                              onMutate={handleMutate}
+                              onOpenPanel={handleOpenPanel}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </>
       ) : (
         /* Cards view */
         <>
-          {currentTests.length > 0 && (
+          {activeTests.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">📌 Active Tests</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={handleOpenPanel} />)}
+                {activeTests.map(t => <TestCard key={t.id} test={t} onOpenPanel={handleOpenPanel} />)}
               </div>
             </div>
           )}
@@ -164,7 +223,7 @@ export default function TestsPage() {
               </div>
             </div>
           )}
-          {tests.filter(t => t.subject === activeSubject).length === 0 && (
+          {subjectTests.length === 0 && (
             <div className="card p-8 text-center text-slate-400">No tests created yet.</div>
           )}
         </>
