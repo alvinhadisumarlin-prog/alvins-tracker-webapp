@@ -6,19 +6,26 @@ import { testRef, pct, pctColor, pctIcon, getStudentIBYear, parseClassCode } fro
 import { getTestResults, getStudentById } from '@/lib/queries';
 
 export default function TestCard({ test, onOpenPanel }) {
-  const { students, results } = useData();
+  const { students, results, testAssignments } = useData();
   const testResults = getTestResults(test.id, results);
 
   const avgP = testResults.length > 0
     ? Math.round(testResults.reduce((sum, r) => sum + pct(r.total_marks, test.max_marks), 0) / testResults.length)
     : null;
 
-  // Students in this subject
-  const subjectStudents = students.filter(s =>
-    (s.class_codes || []).some(c => parseClassCode(c).subject === test.subject)
+  // Get class codes assigned to this test
+  const assignedClassCodes = new Set(
+    testAssignments
+      .filter(a => a.test_id === test.id)
+      .map(a => a.class_code)
+  );
+
+  // Students assigned to this test (have at least one assigned class code)
+  const assignedStudents = students.filter(s =>
+    (s.class_codes || []).some(c => assignedClassCodes.has(c))
   );
   const submittedIds = new Set(testResults.map(r => r.student_id));
-  const missing = subjectStudents.filter(s => !submittedIds.has(s.id));
+  const missing = assignedStudents.filter(s => !submittedIds.has(s.id));
 
   // Group missing by IB year
   const missingByYear = {};
@@ -86,11 +93,11 @@ export default function TestCard({ test, onOpenPanel }) {
         <div className="border-t border-slate-100 pt-3 mt-3 text-sm text-slate-400">No results yet</div>
       )}
 
-      {/* Missing students */}
-      {missing.length > 0 && testResults.length > 0 && (
+      {/* Missing students - show if test is assigned to at least one class */}
+      {missing.length > 0 && assignedClassCodes.size > 0 && (
         <details className="mt-3">
           <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-600">
-            {missing.length} not submitted
+            ▼ {missing.length} not submitted
           </summary>
           <div className="mt-2 space-y-1.5">
             {yearGroups.map(([yr, yStudents]) => (
